@@ -1,0 +1,370 @@
+login.html, loginservlet, jdbcutil,     data.sql, h2.jar(webinf-lib)    insertuserclient deleteuserclient updateuserclient
+
+ctrl + shift + o -> import 자동으로 해줌
+ctrl + shift + f -> indent 자동으로 해줌
+ctrl + shift + / -> 주석 자동으로 해줌
+servlet, filter, listener 만 xml에 등록
+디버깅 시 브라우저에서 요청 실행한 후 뜨는 에러를 확인해야 함.
+eclipse 콘솔창에서 뜨는 에러 보면 안됨.
+
+Tomcat 은 class. 자바 2만줄 코드 apache 애들이 sun에서 제공한 스펙 구현함
+server.xml 수정 하면 프로젝트 이름 변경 가능
+이클립스내에서 서버 재가동하면 new tomcat 한 후 start.
+
+톰캣은 객체. 객체가 생성될 떄 두 개의 객체 따로 생성 web server / servlet container
+web server(80포트) - 정적 컨텐츠 요청오면 바로 처리. 빠르게 가능  확장자 확인해서 처리할 수 없으면 container 포워딩
+servlet container 가 web.xml 파일 읽어들이고 서블릿 객체 생성. 메소드 실행
+
+Lazy loading : 브라우저가 요청할 떄 되어서야 비로소 서블릿 객체 생성
+
+톰캣 서버 이름 : catalina 개발자 딸 이름
+catalina 시작 : tomcat 객체 생성.  서버 엔진 시작 : 서블릿 컨테이너 시작. 
+web.xml에 오류 있으면 컨테이너 시작 안됨. 서버 엔진 시작 x BUT 카탈리나는 시작될수도
+서블릿 만들 때 매개변수 있는 생성자 필요 없음
+
+하나의 서블릿 객체를 여러개의 쓰레드가 실행
+서블릿 컨테이너 생성될 때 컨테이너가 제일 먼저 쓰레드풀 생성.
+클라이언트 하나 당 쓰레드 하나 가 service 실행 
+doGet 과 doPost 나눈 이유 : 쇼핑몰 홈페이지 내 '구매'라는 같은 행위에 대해 
+맘에드는 상품 선택한 경우와 실제 배송정보 입력하고 구매 버튼 클릭한거 같은 서블릿으로 처리하기 위함
+
+HttpServlet abstract 인 이유 : 객체 바로 생성하지 말고 무조건 상속시키기 위함.
+
+init 메서드 있는 이유 : 컨테이너에서 기본 생성자만 쓸 수 있으니까.  -> 멤버변수 초기화
+destroy : 서블릿 객체를 메모리에서 내릴 때(자바 코드 수정 시 서버 리로드 될 때)
+
+EJB 대체하려고 spring 프레임워크
+컨테이너가 콜백함수들 (doGet doPost메소드들) 호출하려면 인자로 넘겨줘야 함. 있어야 함.
+쓰지도 않는 매개변수들request, responce, servletconfig을 넣어야 함. -> 메모리 낭비 심함
+servlet 객체보다 request 가 훨씬 크다 멤버변수 4-50개. 
+
+애너테이션 붙이면 xml 수정한 것과 같은 효과 -> 서버 재시작 해야 함
+
+h2는 100프로 자바. 메모리 적게 씀.
+
+java.sql 의 인터페이스 구현체 : driver (벤더사에 따라 다름)
+근데 우리는 인터페이스만 고정되면 됨.
+호출은 인터페이스의 추상 메서드로 했지만 구현 객체의 메서드가 호출됨
+dbms 바뀌면 드라이버 바꿔야 함. 하지만 코드 수정 필요x
+
+DriverManager.registerDriver(new org.h2.Driver()) 로 해야 함.
+class.forName으로 하면 컴파일 에러 안뜸.
+
+connection 고속도로 뚫어주는 것 DB 종류 바뀌면 새로 뚫어줘야
+
+selectuser123, userdao, 
+
+rs.next 다음 데이터로 이동. resultset 변수는 처음에는 before first 가리킴
+
+dao 쓰는 이유 : sql 쿼리문 한 곳에 모아 관리. 코드 중복성 줄임. 
+
+기존 dao의 문제  -> value object
+매개변수의 순서 외워서 호출해야 함. dao.insertuser("ad", ...)
+값의 뜻을 알려면 메서드 스펙 봐서 확인해봐야 함.
+
+
+vo class -> 매개변수 만들어놓고 alt shift s  
+constructors from superclass using fields getterand setter 
+hashcode(vo 객체 여러개 비교할 때) and equals 
+generate to string. 
+
+UserVO 매개변수 20개 있는데 id 하나만 받아서 쓰겠다면 메모리 낭비
+하지만 매개변수 1개 밖에 없어도 vo 객체 받는게 일반적임
+java의 장점 - 유지보수 최대한 이용하기 위함
+매개변수 늘어나는 순간(메서드 시그니처 바뀌면) 호출하는 쪽 코드 싹다 바꿔야 함
+
+
+회원 목록 출력 메서드 사용자의 요구에 따라 다르게 바꿔야 함. 여러개 만들어야
+-> dao 클래스의 메서드는 select만 할 뿐 검색 결과를 어떻게 할 지는 client가 결정하게 해야 한다
+
+userVO 문제 : 멤버변수 이름 바뀐 경우 vo쓰는 이유와 마찬가지로 많이 바꿔야 함
+새로 변수 추가되는 경우 getter setter 추가 등등 해줘야 함
+
+userVO 클래스에 변수만 남기고 다 지울 것 & Lombok 190p
+https://projectlombok.org/download
+cd c:\DEV
+java -jar lombok.jar  eclipse 실행파일 선택. install      eclipse 재구동
+webinf-lib 폴더에 jar 파일 옮김
+uservo 클래스에 어노테이션들 붙임 @NoArgsConstructor ... 
+모든 vo 클래스에 이것들 다 붙이기 귀찮다 -> @Data
+<5장>
+window-perferences-html 검색-templetes-
+html disabled 입력 못하게 함
+
+input 태그의 radio 타입으로 한 경우 name 같은 경우 하나만 선택하도록
+기본적으로 하나 선택되도록 default : checked
+
+input태그의 name 속성으로 파라미터 이름 정해줘야
+라디오버튼과 체크박스 셀렉트 박스는 value 정하지 않으면 파라미터 전달 안됨
+
+<6장>
+쓰레드에 의해 service 실행
+request와 response 객체는 메서드 호출하는 컨테이너가 생성
+컨테이너가 HTTP request에 있는 방대한 정보들 request 객체에 set 해줌
+서블릿 컨테이너의 역할 기능 알아야 어디까지 해주는지 알아야 개발 가능
+
+httpservletrequest 는 인터페이스임 servletrequest 상속
+컨테이너가 httpservletrequest 를 구현한 클래스의 객체 생성 후 request 매개변수로 넘겨줌
+
+httpservletrequest 를 구현하는 기술에 따라 상용 sw(제우스 웹로직) 오픈소스 sw(톰캣) 나뉨
+request 중요 메서드
+setattribute get remove 
+  -> http 요청프로토콜을 통해 전달된 매개변수 말고 새로운 변수 저장 가능
+setcharacterEncoding (UTF 8 -> 한국어 아랍어 일본어도 안깨짐)
+getrequestdispatcher 화면 이동(request 로 하는 방식 response 로 하는 방식 둘로 나뉨) 관련
+getheader  coolie session 중요(자식 쪽에서 추가된 메소드)
+
+response 중요 메서드 
+setcontenttype getwriter addcookie sendredirect(화면 이동) 
+
+서버가 응답 메시지 만듦. 브라우저에 출력하려면 응답프로토콜 바디와 연결된 출력 스트림 뚫어야 하는데 여기 쓰이는게 PrintWriter
+NVL(MAX(SEQ), 0) MAX 값이 NULL 이면 0으로 해라
+
+클래스 이름 바꿀 때 우클릭-refactor-rename 해야 함. 그래야 서버가 인식
+
+화면이동 - 리디렉트/포워드
+리디렉트 장점 : url 바뀜  but 느림 네트워크 트래픽 증가
+deleteBoard.do?seq=3 하면 url 바뀜
+포워드 : 빠름 but url 안바뀜
+여러개 포워딩 하는 과정에서 에러 발생하면 처음 url 서블릿에 머물러있어서 어디 서블릿에서 문제 생겼는지 오해할 수 있음
+
+다 포워딩으로 바꾸고 새글 등록 후 새로고침하면 계속 생김
+insertBoard.do url이 머물러 있어서 새로고침할 때마다 같은 요청 감
+수정 삭제는 상관 없는데 삽입할 때만
+
+서버 실행할 때 DB 도 실행해야 동작함
+
+서블릿 컨테이너가 init 호출할 때 servlet config 객체 생성, 세팅(xml 파일 참고)
+init에 전달된 servletconfig 파라미터 이용 / httpservlet 의 getparameter 매서드 이용
+
+servlet config : 서블릿 객체 생성 후. init 메서드 실행 전 생성됨
+servlet context : container 가 생성될 떄 생성됨 -> preloading   container가 종료될 때 사라짐
+
+httpservlet request 객체에도 set get remove attribute 있음
+servlet context 객체도 마찬가지 - xml에 파라미터 설정 안해도 set attribute 이용해서 파라미터 추가 가능
+
+<8장>
+request response 는 클라이언트에 응답 돌아가는 순간 메모리에서 사라짐 - 이전 정보는 사라지고 매번 새로운 객체가 만들어짐
+request에서 추출한 정보를 어딘가에 저장해야. 
+로그인 안했는데 목록 볼 수 있음 getboardlist.do -> 해당 브라우저가 이전에 로그인 됐는지 확인해야
+
+쿠키 : 상태정보가 클라이언트의 컴퓨터 하드디스크에. 세션은 서버 메모리에. 
+http 응답 프로토콜 브라우저에 전달 브라우저는 헤더에 쿠키 정보가 있는지 확인
+쿠키 정보 빼서 쿠키 파일 만듦. 해당 파일을 하드디스크에 저장함
+브라우저가 다시 해당 서버에 요청할 떄 요청 프로토콜 헤더에 서버로부터 받은 쿠키 정보 심어서 보냄
+쿠키는 일종의 번호표. 
+쿠키로 저장할 수 있는 데이터는 숫자 문자 뿐 자바 객체 형태로 데이터 저장 불가
+
+setdomain : 네이버로부터 받은 쿠키 정보 다음에도 보내고 싶을 때. 다른 서버에 요청할 때 사용 가능. 거의 안쓰임
+setpath : 특정 경로에 대해서만 쿠키 보냄.
+setmaxage : 쿠키의 유효 기간 초 단위. -1(default)이면 브라우저 끄면(크롬 전체 끄면) 쿠키 사라짐
+크롬에 로그인해놔도 엣지 들어가면 로그인 해야 한다고 뜸. 
+
+쿠키 잘 사용하지 않는 이유
+1 브라우저가 쿠키 차단시키면 해당 데이터 저장할 수 없음 쿠키 이용불가
+ 쿠키 데이터 전송해줘도 브라우저가 추출 안하면 의미 없음
+2 쿠키 저장할 수 있는 파일 수 300개로 제한->setmaxage아무리 길게 해도 오래된 파일부터 삭제됨
+-> 세션 선호
+
+세션에는 객체 형태도 저장 가능
+
+로그인 버튼 2번 눌러야지 로그인 되는 현상 (포워드 쓰면 안되는 경우 - 글등록 로그인)
+-> A서블릿(로그인)에서 B서블릿으로 포워딩. B서블릿에서는 쿠키가 없으니까 로그인 화면 다시 띄움.
+
+request.getsessoin() 호출하면 세션 객체 생성됨 (항상은 아님. 재사용됨)
+세션 객체 생성될 떄 시간정보 객체 메모리 정보 조합돼서 암호화된 세션 유니크한 아이디 만들어짐 
+세션 객체는 브라우저 하나 당 서버 메모리 하나
+이 아이디는 쿠키 객체로 생성되서 응답 프로토콜 헤더에 쿠키 형태로 정보 포함되어 전달됨
+브라우저는 쿠키로 들어온 세션 아이디 저장해놨다가 세션 아이디 요청 시 사용함
+브라우저 끄면 서버로부터 받은 쿠키 정보도 사라짐(default -1)
+
+로그인 성공 시 request.getsessoin() 호출. 서버 메모리에 세션 객체(브라우저와 1대1) 생성. 세션 객체에 세션 ID 저장됨.
+이후 브라우저와 통신할 때 해당 세션 ID 주고받음
+
+리프레시하면- 처음 생성된 세션 객체가 재사용됨. 브라우저 종료되지 않는한. 브라우저마다 세션 유지됨
+
+세션은 내부적으로 쿠키 기술 이용함
+서버는 http 요청에서 무조건 쿠키 정보 추출
+
+httpsession  set get remove attribute 메서드 존재
+request context session 세 곳에  모두 존재( 정보 공유 ) 
+
+setmaxinactiveinterval , invalidate 메서드 매우 중요
+
+<질문 1>
+세션이랑 쿠키 차이점은 쿠키에 아이디 사용자 맞춤 설정 등 모든 내용 다 넣느냐 세션 아이디만 넣느냐 차이인데 
+결국 브라우저가 쿠키 차단하면 세션도 못쓰는거 아닌가  -> ㅇㅇ
+
+<질문 2>
+p233 세션의 동작 원리 2번 '추출된 쿠키 목록' 표현. 
+다른 도메인에서 받은 쿠키들 브라우저가 가지고 있는 모든 쿠키들 보내는건지. x 하나의 도메인에서 세션 id 말고 딴것도 보냄
+
+로그인 성공하는 순간 세션 객체 생성 정보 저장됨. 문제는 로그인 성공하고 나서 자리 비운 경우
+해당 브라우저와 매핑된 서버 메모리가 계속 차지되어야 함.
+톰캣은 30분동안 요청 없으면 해당 세션 없앰
+setmaxinactiveinterval  로 시간 정할 수 있음
+
+forward로 다른 서블릿에 작업 위임한 경우 request 객체를 통해 자원 공유 가능
+응답 htttp 보내기 전까지 살아있는데, sendredirect하면 응답 들어가기 때문에 기존 request 객체 사라지고 새로 생김
+
+redirect를 써야 하는데 정보 공유 하려면 session 
+session에 저장하는 정보는 id정도만. session 남용하면 서버 메모리 그만큼 쓰기 때문에.
+
+정보 공유를 해야 하는 경우 request + forward 이용하는게 좋음
+정말 불가피한 경우 session + redirect 이용.
+
+브라우저 꺼도 저장 유효하게 하려면 servlet context에 저장 - 서블릿 컨테이너와 라이프사이클 동일
+
+로그인 로그아웃 새글등록 리디렉트 해야.
+<로그인 리디렉트 해야 하는 이유>
+로그인 버튼 2번 눌러야지 로그인 되는 현상 (포워드 쓰면 안되는 경우 - 글등록 로그인)
+-> A서블릿(로그인)에서 B서블릿으로 포워딩. B서블릿에서는 쿠키가 없으니까 로그인 화면 다시 띄움.
+<로그아웃>
+세션 끊고 다시 접속 시켜야
+<새글등록>
+새로고침 하면 계속 같은 글 등록됨
+
+<필터>
+필터와 서블릿의 차이 : 필터는 고정으로 preloading(filter 의 init 항상 호출)
+필터를 통해 서블릿 가동 시간 확인 가능
+spring security 가 필터 체인 형식으로 돼있음
+
+<리스너>
+리스너 -> 필터 -> load-on-startup 서블릿
+서블릿 컨테이너 생기면서 서블릿 컨텍스트 생기고
+서블릿 컨텍스트 객체 메모리에 생성될 때 contextInita-- 호출됨
+서버 구동 전 죽기 전 특정 작업 해야 할 때(관리자들에게 문자 보낼 때)
+
+<서브릿 장점>
+플랫폼 독립적  서블릿 이식성 뛰어남  톰캣에서 잘 돌아가는건 딴데에서도 잘돌아감 서버, OS에 종속 안됨
+멀티스레드 -> 적은 메모리, 다수 사용자 처리 가능
+
+UI 코드가 자바 코드 내에 있어서 디자인 바꾸기 어려움 & html 오타 잡아낼 수 없음 자동완성 안됨
+유지보수 시 디자인 바꾸는게 거의 불가능
+
+서블릿은 자바코드 안에 디자인
+jsp는 디자인 안에 필요한 자바코드 들어감
+
+C:\DEV\eclipse-workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost\ROOT\org\apache\jsp
+해당 경로에 jsp가 변환된 java 파일 있고 컴파일 된거 있음
+
+jsp 작성하면 톰캣이 서블릿 클래스로 바꾸고 실행한다
+JSP 파일 내 모든 코드가 _jspService() 메소드 안에 들어감
+
+session 객체는 jsp에서 그냥 이용
+
+html 주석은 jsp가 서블릿으로 변환될 떄 서블릿 클래스에 포함됨
+해당 페이지에서 ctrl u 해서 html 소스 보면 html 소스에 포함되어 있음
+그냥 보통 html 주석으로 처리함
+
+jsp에서 서블릿으로 바꿀 때 지시사항. page import page setcontent -> response.setcontenttype(text/html; charset=utf-8)
+하나의 페이지 지시자에 여러 속성 넣을 수 있음 하지만 가독성을 위해 페이지 지시자 하나 당 속성 하나
+
+<<지시자>>
+<페이지 지시자>
+import
+iserrorpage boardError.jsp 현재 페이지가 에러페이지다 선언  default false
+  -> 얘를 설정해야 해당 페이지(코드)에서 exception 변수 쓸 수 있음
+  language="java" 이거 필요 없음 원래는 C# 이런거 지원했는데 지금은 없음
+errorpage  index.jsp  현재 페이지에서 에러 발생하면 어떤 페이지를 보낼지 선언
+session index.jsp default true : 해당 페이지에서 세션 객체 쓰겠다
+<include 지시자>
+모든 화면이 헤더 푸터 똑같음. 콘텐츠만 다름 헤더 푸터 따로 만들어두고 인클루드
+
+<<스크립트릿, 익스프레션>>
+expression에는 반환값 있는거. 스크립트릿에 반환값 넣으면 반영 안됨
+experssion에 ; 하면 안되는 이유 out.write( expression;); 문법 에러
+<<선언문>>
+선언문으로 선언한 변수는 클래스 선언부 바로 밑에 멤버변수로 선언됨
+선언문으로 선언한 메서드 변수는 service 바깥에. -> 서블릿 멤버변수 쓸 일 없음. 안쓴다고 보면 됨
+선언문 쓸 일없음. 주석문 쓸 일 없음.
+
+jspService(request, response)
+ 여기에 jsp에 쓴 코드 들어감(선언문 제외)
+ -> request, response 쓸 수 있음 
+ jsp가 서블릿으로 변환될 떄 서비스 메서드 밑에 내장객체 변수들이 자동적으로 선언됨
+ 총 10개의 변수(매개변수 2개 포함)가 서비스 코드에 선언
+ 초기화는 언제 되나? 바로 밑에 try 구문으로 싸여 있음
+ 그 밑에 내가 작성한 jsp 코드 들어감
+
+userVO 객체를 세션에 등록할 수 있다.
+
+MODEL1 
+model은 자바 객체 (service dao로 나뉨)
+conroller : jsp에 포함된 자바 코드 - 모든 자바코드가 컨트롤러라고 안함. 사용자 입력정보 추출/db연동/화면 이동 
+   if else for loop는 컨트롤이라고 안함 
+view = html css
+유지 보수 어려움 - jsp 파일 안에 자바코드와 디자인 코드 섞여있음.  jsp 유지보수를 자바 개발자가.
+if else 이런거 있다 보니 디자인 바꾸기가 어렵다. 자바 코드를 jsp에서 완벽하게 제거하면 분리시키면(controller view 나누자)
+ => model2
+
+
+_proc 붙은 jsp 파일 : 100프로 자바코드   -  컨트롤 로직으로만 구현됨
+  여기있던 자바코드는 컨트롤러(서블릿)으로 다 옮겨감
+login.jsp inserUser insertBoard : 100프로 디자인 코드
+getBoard index 는 두 개 섞여 있음 얘네가 문제임 컨트롤러와 뷰 뒤섞여 있는 애들
+
+model2
+jsp파일에는 뷰만 남기고 컨트롤에 해당하는 자바 코드를 servlet 클래스 만들어서 분리시키는 것
+컨트롤러를 직접 만들어서 써도 되지만 신뢰할 수 없으므로 프레임워크 이용함 spring struts webwork (MVC 프레임워크)
+p374  참고
+
+컨트롤러는 브라우저로부터 들어오는 모든 요청을 받을 수 있어야. 컨트롤러 내에서 분기 처리 path 정보에 따라. 
+view는 단순히 어딘가에 등록된 데이터를 꺼내서 검색 결과를 보여주는 일만 해야. 			
+
+브라우저가 jsp바로 호출하면 request에 아무것도 없음. 아무것도 못함
+
+
+p404의 그림 이해되면 Spring MVC 다 이해한거임. 이 수업의 최종 목표 
+
+<직접적인 jsp 차단>
+로그인 하고 글 목록 봐야 함
+사용자가 브라우저 열자마자 getBoardList.jsp 요청하면 NULLpoint Exception 에러 페이지 뜸. 404가 아니라.
+                   request에 검색결과 들어있을리가 없음
+web-app폴더에 등록. 브라우저가 여기 등록된거 요청하는거 막을 수 없음
+사용자가 웹 쓰고 있는데 링크에 .jsp 돼있는거 확인할 수 있음 php asp jsp 노출되는거 보안상 좋지 않음 파일 확장자
+
+jsp 파일을 사용자가 직접 브라우저가 요청하지 못하게 막기 위해 jsp 파일들 web-inf 폴더 밑으로 숨겨야 함
+톰캣을 비롯한 모든 서버는 web-inf 폴더가 마치 없는 것처럼 취급함  -> 404뜸
+
+index.jsp(웰컴파일)제외 모든 jsp web-inf 밑으로
+.jsp 로 끝나는거 View.do로 수정
+
+VO dao : model
+servlet : controller
+view : web-inf-board 아래 jsp
+
+<현재 문제>
+dispatcherServlet 200줄 넘음 기능(.do) 8개밖에 없는데 200줄임
+jsp 파일에 남아있는 자바 코드는 컨트롤러가 아님 이거 없애야 함. EL JSTL 적용
+
+기능 많아지면 수정할 코드 찾기 어려움 -> 서블릿 컨트롤러 기능 분산 (MVC 프레임워크 적용)
+dispatcherServlet 의 기능을 분산
+
+회원가입 링크 클릭 -> insertuerview.do요청 -> dispatcherservlet동작(최초의 .do 요청 들어오면 객체 생성. init메서드-핸들러매핑 뷰리졸버 초기화
+핸들러매핑 생성자 호출-> 2개 컨트로러 객체가 해시맵에 등록 ->뷰리졸버 생성 접두사 접미사 세터 호출
+(핸들러매핑과 뷰리졸버 하나씩만 생성. init 한번만)
+이 상태에서 서비스 메서드 실행 uri로부터 path(/insertUSerViwe.do)추출. 핸들러매핑에 path 전달. 해당 path 담당 서블릿 받음
+해당 서블릿(컨트롤러) 의 handleRequest 호출. insertuser 문자열 리턴받음. .do가 포함돼있지 않으면 getView호출 - uri 정보(포워드의 매개변수) 받음
+
+<컨트롤러가 하는 일>
+사용자 입력정보 추출 / db연동 / 화면 이동
+<Dispatcher Servlet이 하는 일>
+1. 클라이언트로부터 요청사항 받음
+2. 해당 업무(DB CRUD 업무) 담당자 HandllerMapping을 통해 찾음
+3. 담당자한테 일 전달하고 후속 조치(화면 보여주는 일)해주는 사람 이름 받음
+4. 후속조치해주는 사람 이름으로 ViewResolver에서 검색해서 사무실 주소 받음
+5. 후속 조치 해주는 사람 사무실 주소 찾아가서 후속 조치 받음(화면 보여짐)
+
+디자인 패턴, 리팩토링 적용하면 구조는 복잡해지지만 유지보수는 편해진다
+
+dispatcherservlet : front controller 라고 부름 모든 클라이언트로부터의 요청 가장 먼저 받아들이는 창구 *.do
+controller가 request에 출력할 값 저장. front controller는 jsp에 포워드
+
+EL : 자바 코드 없이 내장객체 사용
+${requestScope.board.seq } 이거만 이해하면 됨
+request 객체에 저장된 board라는 멤버변수에서 seq 값 내놔
+앞에꺼 scope 생략하면 request session application 스코프에서 찾음
+
+JSTL : core, fmt 가끔 쓰지만 p441 나머지 5개는 안씀
+core : if else for-loop 자바 코드 대체해줌
